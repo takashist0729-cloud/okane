@@ -197,6 +197,7 @@ dialog input,dialog select{width:100%;margin-top:6px;border:1px solid var(--line
     <p class="sub" id="sub">はじめに設定をしてください</p>
     <div class="meter" aria-hidden="true"><span id="meter" style="width:0"></span></div>
     <p class="note" id="note" hidden></p>
+    <p class="sub" id="saving" hidden style="margin-top:10px"></p>
   </section>
 
   <section class="payday" id="paydayBox" hidden>
@@ -420,10 +421,10 @@ dialog input,dialog select{width:100%;margin-top:6px;border:1px solid var(--line
   <label>名前<input id="fName"></label>
   <label>金額<small>わからなければ空欄でOK。あとで明細を見て入れられます</small><input id="fAmt" inputmode="numeric" placeholder="例：1490"></label>
   <label>支払いのタイミング
-    <div class="seg" id="fCycle"><button data-c="m" aria-pressed="true">毎月</button><button data-c="y" aria-pressed="false">1年に1回</button><button data-c="o" aria-pressed="false">今回だけ</button></div>
+    <div class="seg" id="fCycle"><button data-c="m" aria-pressed="true">毎月</button><button data-c="y" aria-pressed="false">1年に1回</button><button data-c="o" aria-pressed="false">予定の出費</button></div>
   </label>
   <label id="fDayL">引き落とし日<small>わかれば。毎月何日か</small><input id="fDay" inputmode="numeric" placeholder="例：27"></label>
-  <label id="fDateL" hidden>支払う日<input id="fDate" type="date"></label>
+  <label id="fDateL" hidden>支払う日<small>先の日付なら、その日まで毎日少しずつ取り分けます</small><input id="fDate" type="date"></label>
   <label class="check"><input type="checkbox" id="fCancel">あまり使ってない・解約を考えたい</label>
   <div class="row"><button class="danger" id="fDel">削除</button><button id="fClose">閉じる</button><button class="primary" id="fSave">保存する</button></div>
 </dialog>
@@ -438,6 +439,7 @@ const SUGG=[
   ["ネット・アプリ",["iCloud+","Google One","Microsoft 365","AIツールの有料プラン","Adobe","Nintendo Switch Online","PlayStation Plus","スマホゲームの月額パス","VPN・セキュリティソフト"]],
   ["暮らし",["ジム・フィットネス","習い事・オンライン講座","食材・ミールキットの宅配","ウォーターサーバー","コンタクトレンズ定期便","サプリ・化粧品の定期便"]],
   ["お金・保険",["生命保険・医療保険","自動車保険","奨学金の返済","ローン","リボ払い","クレジットカードの年会費","Amazonプライム以外の年会費"]],
+  ["予定の出費",["結婚式・ご祝儀","住民税","国民健康保険","国民年金","自動車税","車検","帰省・旅行","誕生日・記念日のプレゼント","賃貸の更新料"]],
   ["その他",["ファンクラブ・推し活","クラウドファンディングの月額支援","寄付・サポート会員","ペット保険"]],
 ];
 const LS_KEY="kyou-no-okane-v2";
@@ -458,9 +460,14 @@ const fixedTotal=()=>state.fixed.reduce((s,f)=>s+monthly(f),0);
 const parseDate=s=>{const m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s||"");return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
 const toISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 // total of fixed payments due between from and to (both inclusive, by day)
+// a dated one-off payment: whole amount if it falls in [from,to]; if it is later, set aside
+// the share of it that belongs to this window, so the full amount is ready by its date
+function oneOffShare(f,from,to){const d=parseDate(f.date),a=f.amt||0;if(!d||!a)return 0;from=startOfDay(from);to=startOfDay(to);
+  if(d<from)return 0;if(d<=to)return a;return Math.ceil(a*(daysBetween(from,to)+1)/daysBetween(from,d));}
+const saving=()=>{const t=startOfDay(new Date());return state.fixed.filter(f=>f.cycle==="o"&&f.amt&&parseDate(f.date)&&parseDate(f.date)>=t).sort((a,b)=>parseDate(a.date)-parseDate(b.date));};
 function dueBetween(from,to){from=startOfDay(from);to=startOfDay(to);if(to<from)return 0;let sum=0;const days=daysBetween(from,to)+1;
   for(const f of state.fixed){const a=f.amt||0;if(!a)continue;
-    if(f.cycle==="o"){const d=parseDate(f.date);if(d&&d>=from&&d<=to)sum+=a;}
+    if(f.cycle==="o"){sum+=oneOffShare(f,from,to);}
     else if(f.cycle==="m"&&f.day){for(let y=from.getFullYear(),m=from.getMonth();new Date(y,m,1)<=to;m++){const d=paydayIn(y,m,f.day);if(d>=from&&d<=to)sum+=a;}}
     else sum+=Math.ceil(monthly(f)*days/30);}
   return sum;}
@@ -493,7 +500,7 @@ function compute(){
     return {mode:"bal",daily,left:daily-todaySpent,daysLeft,next:target,start:asOf,rem:budget-before-todaySpent,tomorrow:daysLeft>1?Math.floor((budget-before-todaySpent)/(daysLeft-1)):null};
   }
   const {start,next}=period(now,s.payday);
-  const budget=s.income-fixedTotal()-(s.save||0)-state.fixed.filter(f=>f.cycle==="o").reduce((t,f)=>{const d=parseDate(f.date);return t+(d&&d>=start&&d<next?(f.amt||0):0);},0);
+  const budget=s.income-fixedTotal()-(s.save||0)-state.fixed.filter(f=>f.cycle==="o").reduce((t,f)=>t+oneOffShare(f,start,new Date(next.getFullYear(),next.getMonth(),next.getDate()-1)),0);
   let before=0,todaySpent=0;
   for(const e of state.entries){const d=new Date(e.ts);if(d<start||d>=next)continue;
     if(startOfDay(d).getTime()===today.getTime())todaySpent+=e.amt;else if(d<today)before+=e.amt;}
@@ -505,6 +512,8 @@ function compute(){
 function renderToday(){
   const c=compute(),amount=$("amount"),note=$("note");
   amount.classList.remove("low","over");note.hidden=true;
+  const sv=saving(),svEl=$("saving");svEl.hidden=!sv.length||!c;
+  if(sv.length){svEl.textContent="取り分け中の予定："+sv.slice(0,3).map(f=>{const d=parseDate(f.date);return `${f.name}（${d.getMonth()+1}/${d.getDate()}）`;}).join("、")+(sv.length>3?` ほか${sv.length-3}件`:"");}
   if(!c){amount.innerHTML='<span class="yen">¥</span>—';$("sub").textContent="はじめに手取りと給料日を入れてください";$("meter").style.width="0";}
   else{
     amount.innerHTML=`<span class="yen">¥</span>${yen(Math.max(0,c.left))}`;
@@ -550,7 +559,9 @@ function renderFixed(){
       const row=document.createElement("button");row.className="fx"+(f.cancel?" cancel":"");
       row.style.cssText="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line)";
       const n=document.createElement("span");n.className="name";n.textContent=f.name;
-      const meta=[];if(f.cycle==="o"){const d=parseDate(f.date);meta.push(d?`${d.getMonth()+1}/${d.getDate()}に1回だけ`:"今回だけ");}if(f.cycle==="y")meta.push("年払い・月あたり¥"+yen(monthly(f)));if(f.day)meta.push(`毎月${f.day}日`);if(f.cancel)meta.push("解約を検討中");
+      const meta=[];if(f.cycle==="o"){const d=parseDate(f.date),t=startOfDay(new Date());
+        if(!d)meta.push("予定の出費");else if(d<t)meta.push(`${d.getMonth()+1}/${d.getDate()}に支払い済み`);
+        else{const n=daysBetween(t,d);meta.push(n===0?"今日が支払日":`${d.getMonth()+1}/${d.getDate()}まで、1日約¥${yen(Math.ceil((f.amt||0)/n))}ずつ取り分け中`);}}if(f.cycle==="y")meta.push("年払い・月あたり¥"+yen(monthly(f)));if(f.day)meta.push(`毎月${f.day}日`);if(f.cancel)meta.push("解約を検討中");
       if(meta.length){const s=document.createElement("small");s.textContent=meta.join("／");n.appendChild(s);}
       const v=document.createElement("span");
       if(f.amt){v.className="val";v.textContent=`¥${yen(f.amt)}${f.cycle==="y"?"/年":f.cycle==="o"?"":""}`;}else{v.className="unset";v.textContent="金額を入れる";}
@@ -564,7 +575,7 @@ function renderFixed(){
     const wrap=document.createElement("div");wrap.className="chips sugg";wrap.style.marginTop="4px";
     for(const it of items){const b=document.createElement("button");b.textContent=it;
       if(names.has(it)){b.className="added";b.setAttribute("aria-label",it+"（登録済み）");b.onclick=()=>openFx(state.fixed.find(f=>f.name===it));}
-      else b.onclick=()=>openFx({id:null,name:it,amt:0,cycle:/年会費|火災保険/.test(it)?"y":"m",group:g});
+      else b.onclick=()=>openFx({id:null,name:it,amt:0,cycle:g==="予定の出費"?"o":/年会費|火災保険/.test(it)?"y":"m",group:g});
       wrap.appendChild(b);}
     sg.appendChild(wrap);
   }
