@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>きょうのおかね</title>
+<meta name="theme-color" content="#E9F1EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#13201E" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="きょうのおかね">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9F1EE; --surface:#FFFFFF; --ink:#1C2A28; --muted:#5E716D;
+  --accent:#2C8A75; --accent-ink:#FFFFFF; --soft:#D5E7E1;
+  --warn:#B9791A; --over:#B8503F; --line:#CADBD5; --cut:#F6E7D3;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13201E; --surface:#1B2B28; --ink:#E6F0ED; --muted:#9AB1AB;
+    --accent:#5CC2A8; --accent-ink:#0E1A18; --soft:#24403A;
+    --warn:#E0A84A; --over:#E58676; --line:#2D4741; --cut:#3A3122;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13201E; --surface:#1B2B28; --ink:#E6F0ED; --muted:#9AB1AB;
+  --accent:#5CC2A8; --accent-ink:#0E1A18; --soft:#24403A;
+  --warn:#E0A84A; --over:#E58676; --line:#2D4741; --cut:#3A3122;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  font-weight:500;line-height:1.6;-webkit-font-smoothing:antialiased}
+main{max-width:460px;margin:0 auto;padding:16px 18px 110px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:12px}
+[hidden]{display:none!important}
+
+.hero{text-align:center;padding:24px 8px 20px}
+.hero .label{font-size:1rem;color:var(--muted);margin:0}
+.amount{font-weight:900;font-size:clamp(3.4rem,17vw,5rem);line-height:1.05;letter-spacing:-.02em;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.amount .yen{font-size:.45em;margin-right:.08em;vertical-align:.35em}
+.amount.low{color:var(--warn)} .amount.over{color:var(--over)}
+.sub{font-size:.95rem;color:var(--muted);margin:0}
+.note{margin:14px auto 0;max-width:30em;background:var(--soft);border-radius:14px;padding:10px 14px;font-size:.92rem;text-align:left}
+.meter{height:10px;background:var(--soft);border-radius:99px;overflow:hidden;margin:18px 6px 0}
+.meter span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s ease}
+
+.card{background:var(--surface);border-radius:22px;padding:18px;margin-top:8px;border:1px solid var(--line)}
+.field{display:flex;align-items:baseline;gap:6px;border-bottom:2px solid var(--line);padding:2px 4px 6px}
+.field span{font-size:1.6rem;font-weight:700;color:var(--muted)}
+.field input{border:0;background:transparent;font-size:2.2rem;font-weight:700;width:100%;outline:none;font-variant-numeric:tabular-nums}
+.field:focus-within{border-color:var(--accent)}
+.quick{display:flex;gap:8px;margin-top:12px}
+.quick button{flex:1;border:1px solid var(--line);background:transparent;border-radius:12px;padding:8px 0;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chips button{border:1px solid var(--line);background:transparent;border-radius:99px;padding:5px 14px;font-size:.92rem}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.go{display:block;width:100%;margin-top:14px;border:0;border-radius:16px;padding:15px;background:var(--accent);color:var(--accent-ink);font-size:1.15rem;font-weight:900}
+.go:disabled{opacity:.45;cursor:default}
+
+h2{font-size:1.05rem;margin:28px 4px 8px;font-weight:700}
+h2 small{font-weight:500;color:var(--muted);font-size:.85rem;margin-left:6px}
+ul.log{list-style:none;margin:0;padding:0}
+ul.log li{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid var(--line)}
+ul.log .what{flex:1;min-width:0}
+ul.log .what small{color:var(--muted);margin-left:8px}
+ul.log .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ghost{border:0;background:transparent;color:var(--muted);font-size:.85rem;padding:4px 6px}
+.empty{color:var(--muted);font-size:.92rem;padding:8px 6px;margin:0}
+.linkish{display:block;margin:26px auto 0;background:transparent;border:1px solid var(--line);border-radius:99px;padding:8px 18px;color:var(--muted)}
+
+/* fixed costs */
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.total .big{font-size:2.2rem;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.total .yr{color:var(--muted);font-size:.92rem}
+.cutbox{margin-top:12px;background:var(--cut);border-radius:14px;padding:10px 14px;font-size:.95rem}
+.group-name{font-size:.85rem;color:var(--muted);margin:16px 4px 4px;font-weight:700}
+.fx{display:flex;align-items:center;gap:8px;padding:10px 6px;border-bottom:1px solid var(--line)}
+.fx .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx .name small{display:block;color:var(--muted);font-size:.78rem}
+.fx .val{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fx.cancel .name,.fx.cancel .val{text-decoration:line-through;text-decoration-color:var(--warn);text-decoration-thickness:2px}
+.fx .unset{color:var(--warn);font-weight:700;font-size:.9rem}
+.tip{font-size:.9rem;color:var(--muted);margin:4px 4px 0}
+details.hint{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;margin-top:10px}
+details.hint summary{cursor:pointer;font-weight:700}
+details.hint ol{margin:10px 0 0;padding-left:1.3em;font-size:.92rem}
+details.hint li{margin-bottom:6px}
+.sugg button.added{opacity:.4;text-decoration:line-through}
+.addown{display:flex;gap:8px;margin-top:14px}
+.addown input{flex:1;border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--bg)}
+.addown button{border:0;border-radius:12px;padding:9px 16px;background:var(--ink);color:var(--bg);font-weight:700}
+
+/* stopper & wait */
+.urge{display:block;width:100%;margin-top:12px;border:2px solid var(--warn);background:transparent;color:var(--warn);border-radius:16px;padding:13px;font-size:1.05rem;font-weight:900}
+.payday{background:var(--cut);border-radius:18px;padding:14px 16px;margin-top:4px}
+.payday strong{display:block;font-size:1.02rem}
+.payday p{margin:4px 0 8px;font-size:.92rem}
+.payday label{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:.95rem}
+.payday input{width:20px;height:20px;margin:0}
+.stats{display:flex;gap:10px;margin-top:16px}
+.stats div{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+.stats b{display:block;font-size:1.6rem;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.2}
+.stats span{font-size:.82rem;color:var(--muted)}
+.winput{display:flex;gap:8px;margin-top:10px}
+.winput input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.witem{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin-top:8px}
+.witem .top{display:flex;justify-content:space-between;gap:10px;font-weight:700}
+.witem .when{font-size:.85rem;color:var(--muted)}
+.witem.due{border-color:var(--accent);border-width:2px}
+.witem .ask{display:flex;gap:8px;margin-top:10px}
+.witem .ask button{flex:1;border-radius:12px;padding:9px;font-weight:700;border:1px solid var(--line);background:transparent}
+.witem .ask .keep{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.done{opacity:.6}
+#dStop{width:min(94vw,440px)}
+.impact{background:var(--soft);border-radius:16px;padding:14px;margin:12px 0}
+.impact .arrow{font-size:1.5rem;font-weight:900;font-variant-numeric:tabular-nums}
+.impact .arrow.bad{color:var(--over)}
+.selfmsg{font-size:1.15rem;font-weight:700;border-left:4px solid var(--warn);padding:4px 0 4px 12px;margin:10px 0}
+.timer{font-size:3.4rem;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;margin:8px 0}
+.todo{margin:0;padding-left:1.2em;font-size:.95rem}
+.col{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.col button{border-radius:14px;padding:13px;font-weight:700;border:1px solid var(--line);background:transparent}
+.col .primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* growth */
+.lvpill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 12px 3px 6px;font-size:.85rem;font-weight:700;color:var(--ink)}
+.lvpill svg{width:22px;height:22px}
+.garden{text-align:center;padding:10px 0 0}
+.garden svg{width:200px;height:200px;max-width:70vw}
+.garden .lv{font-size:1.5rem;font-weight:900;margin:0}
+.xpbar{height:12px;background:var(--soft);border-radius:99px;overflow:hidden;margin:8px 20px 4px}
+.xpbar span{display:block;height:100%;background:var(--warn);border-radius:99px;transition:width .5s ease}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-top:8px}
+.goal .gl{display:flex;justify-content:space-between;font-weight:700}
+.goal .xpbar{margin:8px 0 4px}
+.goal .xpbar span{background:var(--accent)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.badge{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 6px;text-align:center;font-size:.8rem;line-height:1.35}
+.badge .ic{display:block;font-size:1.7rem;line-height:1.3}
+.badge.lock{opacity:.38}
+.badge.lock .ic{filter:grayscale(1)}
+.xplist{font-size:.88rem;color:var(--muted);margin:4px 4px 0;padding-left:1.2em}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--ink);color:var(--bg);border-radius:99px;padding:10px 18px;font-weight:700;z-index:20;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#toast,.xpbar span{transition:none}}
+
+/* tutorial */
+#dTour{width:min(94vw,420px);padding:0;overflow:hidden}
+.tour-top{display:flex;justify-content:flex-end;padding:12px 14px 0}
+.tour-top button{border:0;background:transparent;color:var(--muted);font-size:.9rem;padding:6px 8px}
+.slide{padding:4px 26px 8px;text-align:center;min-height:330px;display:flex;flex-direction:column;align-items:center}
+.slide svg{width:132px;height:132px;margin:6px 0 10px}
+.slide h3{font-size:1.25rem;line-height:1.5;margin:0 0 10px;white-space:pre-line}
+.slide p{color:var(--muted);font-size:.98rem;margin:0}
+.dots{display:flex;justify-content:center;gap:8px;padding:6px 0 4px}
+.dots span{width:8px;height:8px;border-radius:99px;background:var(--line);transition:width .2s}
+.dots span.on{width:22px;background:var(--accent)}
+.tour-nav{display:flex;gap:10px;padding:12px 18px 18px}
+.tour-nav button{flex:1;border-radius:14px;padding:13px;font-weight:700;border:1px solid var(--line);background:transparent}
+.tour-nav .primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media (prefers-reduced-motion:reduce){.dots span{transition:none}}
+
+/* tabs */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));z-index:5}
+nav.tabs button{white-space:nowrap;font-size:.92rem;flex:1;max-width:220px;border:0;background:transparent;border-radius:14px;padding:10px;font-weight:700;color:var(--muted)}
+nav.tabs button[aria-selected="true"]{background:var(--soft);color:var(--ink)}
+
+dialog{border:0;border-radius:22px;padding:22px;background:var(--surface);color:var(--ink);width:min(92vw,420px)}
+dialog::backdrop{background:rgba(10,20,18,.45)}
+dialog h3{margin:0 0 4px;font-size:1.25rem}
+dialog p{margin:0 0 12px;color:var(--muted);font-size:.92rem}
+dialog label{display:block;margin-top:14px;font-weight:700;font-size:.95rem}
+dialog label small{display:block;font-weight:500;color:var(--muted)}
+dialog input,dialog select{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);font-size:1.05rem}
+.seg{display:flex;gap:8px;margin-top:6px}
+.seg button{flex:1;border:1px solid var(--line);background:transparent;border-radius:12px;padding:9px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.check{display:flex!important;align-items:center;gap:10px;font-weight:500!important}
+.check input{width:22px;height:22px;margin:0}
+.row{display:flex;gap:10px;margin-top:20px}
+.row button{flex:1;border-radius:14px;padding:12px;font-weight:700;border:1px solid var(--line);background:transparent}
+.row .primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.row .danger{color:var(--over);flex:0 0 auto;padding:12px 14px}
+.sync{text-align:center;font-size:.78rem;color:var(--muted);margin-top:12px}
+@media (prefers-reduced-motion:reduce){.meter span{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<!-- ===== Today ===== -->
+<div id="viewToday">
+  <section class="hero" aria-live="polite">
+    <button class="lvpill" id="lvPill" aria-label="成長を見る"></button>
+    <p class="label" style="margin-top:12px">今日あと使えるお金</p>
+    <p class="amount" id="amount"><span class="yen">¥</span>—</p>
+    <p class="sub" id="sub">はじめに設定をしてください</p>
+    <div class="meter" aria-hidden="true"><span id="meter" style="width:0"></span></div>
+    <p class="note" id="note" hidden></p>
+    <p class="sub" id="saving" hidden style="margin-top:10px"></p>
+  </section>
+
+  <section class="payday" id="paydayBox" hidden>
+    <strong id="paydayTitle">給料日モード</strong>
+    <p>お金が入った直後は、いつもより「使っても大丈夫」と感じやすい時期です。先にこれだけやっておきましょう。</p>
+    <label><input type="checkbox" data-pd="fixed">固定費の分を別の口座や封筒に分けた</label>
+    <label><input type="checkbox" data-pd="save">貯金の分を先に移した</label>
+    <label><input type="checkbox" data-pd="check">今日使えるお金を確認した</label>
+  </section>
+
+  <section class="card" aria-label="使ったお金を記録">
+    <label class="field"><span>¥</span><input id="amt" inputmode="numeric" placeholder="使った金額" aria-label="使った金額"></label>
+    <div class="quick">
+      <button data-add="100">+100</button><button data-add="500">+500</button><button data-add="1000">+1000</button>
+    </div>
+    <div class="chips" id="cats"></div>
+    <button class="go" id="go" disabled>記録する</button>
+  </section>
+
+  <button class="urge" id="urgeBtn">今、使いたい衝動がきてる</button>
+
+  <h2>今日の記録</h2>
+  <ul class="log" id="log"></ul>
+  <button class="linkish" id="openIncome">収入と残高の設定</button>
+  <button class="linkish" id="openTour" style="margin-top:10px">使い方をもう一度見る</button>
+  <button class="linkish" id="openData" style="margin-top:10px">データの書き出し・読み込み</button>
+  <button class="linkish" id="openReset" style="margin-top:10px">データをすべて消して最初からやり直す</button>
+</div>
+
+<!-- ===== Fixed costs ===== -->
+<div id="viewFixed" hidden>
+  <section class="card" style="margin-top:16px">
+    <div class="total">
+      <div><div class="sub">毎月出ていくお金</div><div class="big" id="fxTotal">¥0</div></div>
+      <div class="yr" id="fxYear">1年で ¥0</div>
+    </div>
+    <div class="cutbox" id="cutBox" hidden></div>
+    <p class="tip" id="fxUnset" hidden></p>
+  </section>
+
+  <h2>登録している固定費</h2>
+  <div id="fxList"></div>
+
+  <h2>契約してるかも？<small>当てはまるものをタップ</small></h2>
+  <p class="tip">忘れていそうなものも多めに並べています。押すと金額を入れる画面が開きます。</p>
+  <div id="sugg"></div>
+  <div class="addown">
+    <input id="ownName" placeholder="リストにないものを追加">
+    <button id="ownAdd">追加</button>
+  </div>
+
+  <details class="hint">
+    <summary>忘れている契約の見つけ方</summary>
+    <ol>
+      <li>iPhoneなら「設定」→ 一番上の自分の名前 →「サブスクリプション」。解約済みも含めて一覧で見られます。</li>
+      <li>Androidなら「Google Play」アプリ → 右上のアイコン →「お支払いと定期購入」→「定期購入」。</li>
+      <li>クレジットカードの明細を2〜3か月分見て、毎月同じ金額が出ているものを探す。年払いのものは1年分見ると見つかります。</li>
+      <li>スマホ料金の明細の「キャリア決済」「オプション」の欄。契約時に付けた無料期間つきオプションが残りがちです。</li>
+      <li>Amazonなら「アカウントサービス」→「メンバーシップおよび購読」。</li>
+      <li>メールで「お支払い」「ご請求」「更新のお知らせ」「領収書」と検索する。</li>
+    </ol>
+  </details>
+</div>
+
+<!-- ===== Growth ===== -->
+<div id="viewGrow" hidden>
+  <section class="garden">
+    <div id="plant"></div>
+    <p class="lv" id="gLv">Lv.1</p>
+    <div class="xpbar"><span id="gXp" style="width:0"></span></div>
+    <p class="sub" id="gNext"></p>
+  </section>
+
+  <h2>浮いたお金でできること</h2>
+  <div id="goals"></div>
+
+  <h2>バッジ<small id="bCount"></small></h2>
+  <div class="badges" id="badges"></div>
+
+  <h2>経験値がもらえること</h2>
+  <ul class="xplist">
+    <li>使ったお金を記録する：+5（1日3回まで）</li>
+    <li>衝動を乗り越える：+50</li>
+    <li>待機リストで「やめておく」：+30</li>
+    <li>衝動を待機リストに回す：+20</li>
+    <li>給料日モードのチェック：+10</li>
+    <li>固定費を登録する：+5／解約候補を見つける：+15</li>
+  </ul>
+  <p class="tip">記録が途切れても経験値は減りません。いつでも続きから始められます。</p>
+</div>
+
+<!-- ===== Wait list ===== -->
+<div id="viewWait" hidden>
+  <div class="stats">
+    <div><b id="stSaved">¥0</b><span>がまんして浮いたお金</span></div>
+    <div><b id="stCount">0回</b><span>衝動を乗り越えた回数</span></div>
+  </div>
+
+  <h2>欲しいものを待機させる</h2>
+  <p class="tip">すぐ買わずに、ここに入れて時間を置きます。時間がきたら「まだ欲しい？」と聞きます。</p>
+  <section class="card">
+    <div class="winput"><input id="wName" placeholder="欲しいもの"><input id="wAmt" inputmode="numeric" placeholder="金額" style="flex:0 0 7.5em"></div>
+    <div class="chips" id="wWait"></div>
+    <button class="go" id="wAdd">待機リストに入れる</button>
+  </section>
+
+  <h2>待機中</h2>
+  <div id="wList"></div>
+  <h2 id="wDoneH" hidden>これまでの結果</h2>
+  <div id="wDone"></div>
+
+  <button class="linkish" id="openStopSet">衝動ストッパーの設定</button>
+</div>
+
+<p class="sync" id="sync"></p>
+<div id="toast" role="status" aria-live="polite"></div>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" id="tabToday" aria-selected="true">きょう</button>
+  <button role="tab" id="tabWait" aria-selected="false">待機リスト</button>
+  <button role="tab" id="tabGrow" aria-selected="false">成長</button>
+  <button role="tab" id="tabFixed" aria-selected="false">固定費</button>
+</nav>
+
+<!-- stopper flow -->
+<dialog id="dStop">
+  <div id="stop1">
+    <h3>ちょっと待って</h3>
+    <p>衝動は、何もしなくても10〜20分で波が引いていくことが多いです。まず数字だけ見てください。</p>
+    <p class="selfmsg" id="stopMsg" hidden></p>
+    <label style="margin-top:4px">使おうとしている金額<input id="stopAmt" inputmode="numeric"></label>
+    <div class="impact" id="impact"></div>
+    <div class="col">
+      <button class="primary" id="stopWait">10分だけ待ってみる</button>
+      <button id="stopToList">待機リストに入れて明日考える</button>
+      <button id="stopCalm">もう落ち着いた</button>
+    </div>
+  </div>
+  <div id="stop2" hidden>
+    <h3>10分だけ、別のことを</h3>
+    <div class="timer" id="timer" aria-live="off">10:00</div>
+    <ol class="todo">
+      <li id="altLi" hidden style="font-weight:700"></li>
+      <li>スマホを置いて、外を5分歩く</li>
+      <li>水を1杯飲む、シャワーを浴びる</li>
+      <li>誰かにLINEする（理由は言わなくていい）</li>
+      <li>財布やカードを手の届かない場所に置く</li>
+    </ol>
+    <div class="col">
+      <button class="primary" id="stopCalm2">落ち着いた</button>
+      <button id="stopStill" hidden>まだ使いたい</button>
+    </div>
+  </div>
+  <div id="stop3" hidden>
+    <h3>まだ使いたい気持ちがある</h3>
+    <p>それも自然なことです。もう一段だけ、時間を置く選択肢があります。</p>
+    <div class="col">
+      <button class="primary" id="stopToList2">待機リストに入れて明日考える</button>
+      <button id="stopDecide">使うと決めた</button>
+    </div>
+  </div>
+  <div id="stop4" hidden>
+    <h3 id="s4Title">よく乗り越えました</h3>
+    <p id="s4Body"></p>
+    <div class="row"><button class="primary" id="stopClose">閉じる</button></div>
+  </div>
+</dialog>
+
+<dialog id="dStopSet">
+  <h3>衝動ストッパーの設定</h3>
+  <p>ここに書いた内容はあなたにだけ表示されます。</p>
+  <label>止めたい使い方<small>自分がわかる言葉でOK</small><input id="ssLabel" placeholder="例：夜の出費"></label>
+  <label>1回あたりの目安の金額<input id="ssAmt" inputmode="numeric" placeholder="例：20000"></label>
+  <label>衝動がきた時の自分へのひとこと<small>落ち着いている今の自分から、未来の自分へ</small><input id="ssMsg" placeholder="例：来月の家賃で焦るのはもう嫌だ"></label>
+  <label>お金を使わずにできる代わりのこと<small>衝動がきた時、いちばん上に表示します</small><input id="ssAlt" placeholder="例：部屋でひとりで発散する"></label>
+  <label>給料日から何日間、注意モードにするか<input id="ssDays" inputmode="numeric" placeholder="例：3"></label>
+  <div class="row"><button id="ssClose">閉じる</button><button class="primary" id="ssSave">保存する</button></div>
+</dialog>
+
+<dialog id="dTour" aria-label="使い方">
+  <div class="tour-top"><button id="tourSkip">スキップ</button></div>
+  <div class="slide" id="tourSlide" aria-live="polite"></div>
+  <div class="dots" id="tourDots" aria-hidden="true"></div>
+  <div class="tour-nav"><button id="tourBack">戻る</button><button class="primary" id="tourNext">次へ</button></div>
+</dialog>
+
+<dialog id="dData">
+  <h3>データの書き出し・読み込み</h3>
+  <p>データはこのスマホの中にだけ保存されています。機種変更に備えて、ときどき書き出しておくと安心です。</p>
+  <div class="col" style="margin-top:4px">
+    <button class="primary" id="dtExport">ファイルに書き出す</button>
+    <button id="dtCopy">文字としてコピーする</button>
+    <button id="dtPick">ファイルから読み込む</button>
+  </div>
+  <input type="file" id="dtFile" accept=".json,application/json,text/plain" hidden>
+  <label>または、コピーした文字を貼り付けて読み込む<textarea id="dtText" rows="3" style="width:100%;margin-top:6px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--bg);font:inherit;font-size:.85rem"></textarea></label>
+  <p id="dtMsg" style="margin-top:8px"></p>
+  <div class="row"><button id="dtClose">閉じる</button><button class="primary" id="dtPaste">貼り付けた内容を読み込む</button></div>
+</dialog>
+
+<dialog id="dReset">
+  <h3>データをすべて消しますか？</h3>
+  <p>記録・固定費・待機リスト・衝動ストッパーの設定・経験値やバッジが全部消えて、最初の状態に戻ります。元には戻せません。</p>
+  <div class="row"><button id="rsCancel">やめる</button><button class="primary" id="rsOk" style="background:var(--over);border-color:var(--over)">すべて消す</button></div>
+</dialog>
+
+<!-- income dialog -->
+<dialog id="dIncome">
+  <h3>収入と残高の設定</h3>
+  <p>ざっくりで大丈夫です。あとから何度でも変えられます。</p>
+  <div class="seg" id="sMode"><button data-m="pay" aria-pressed="true">毎月の給料がある</button><button data-m="bal" aria-pressed="false">収入が未定</button></div>
+  <div id="modePay">
+  <label>1か月の手取り<small>給料など、毎月入ってくるお金</small><input id="sIncome" inputmode="numeric" placeholder="例：220000"></label>
+  <label>給料日<small>毎月何日か</small><input id="sPayday" inputmode="numeric" placeholder="例：25"></label>
+  <label>毎月の貯金したい額<small>先に取り分けておく分。なければ0でOK</small><input id="sSave" inputmode="numeric" placeholder="例：10000"></label>
+  </div>
+  <div id="modeBal" hidden>
+  <label>今の残高<small>銀行と手元の現金を合わせた、今使えるお金</small><input id="sBal" inputmode="numeric" placeholder="例：143426"></label>
+  <label>この日まで持たせる<small>次の収入が入りそうな日や、目標の日</small><input id="sTarget" type="date"></label>
+  <p style="margin-top:8px">その日までに払う固定費（「固定費」タブで引き落とし日を入れたもの）は、先に差し引いて計算します。</p>
+  </div>
+  <div class="row"><button id="incCancel">閉じる</button><button class="primary" id="incSave">保存する</button></div>
+</dialog>
+
+<!-- fixed item dialog -->
+<dialog id="dFx">
+  <h3 id="fxTitle">固定費</h3>
+  <label>名前<input id="fName"></label>
+  <label>金額<small>わからなければ空欄でOK。あとで明細を見て入れられます</small><input id="fAmt" inputmode="numeric" placeholder="例：1490"></label>
+  <label>支払いのタイミング
+    <div class="seg" id="fCycle"><button data-c="m" aria-pressed="true">毎月</button><button data-c="y" aria-pressed="false">1年に1回</button><button data-c="o" aria-pressed="false">予定の出費</button></div>
+  </label>
+  <label id="fDayL">引き落とし日<small>わかれば。毎月何日か</small><input id="fDay" inputmode="numeric" placeholder="例：27"></label>
+  <label id="fDateL" hidden>支払う日<small>先の日付なら、その日まで毎日少しずつ取り分けます</small><input id="fDate" type="date"></label>
+  <label class="check"><input type="checkbox" id="fCancel">あまり使ってない・解約を考えたい</label>
+  <div class="row"><button class="danger" id="fDel">削除</button><button id="fClose">閉じる</button><button class="primary" id="fSave">保存する</button></div>
+</dialog>
+
+<script>
+const CATS=["食費","コンビニ","カフェ","交通","日用品","その他"];
+const SUGG=[
+  ["住まい",["家賃","管理費・共益費","駐車場・駐輪場","電気代","ガス代","水道代","火災保険"]],
+  ["通信",["スマホ代","スマホ本体の分割払い","自宅のネット回線","ポケットWi-Fi","スマホのオプション（保証・留守電など）"]],
+  ["動画",["Netflix","Amazonプライム","U-NEXT","Disney+","Hulu","DAZN","ABEMAプレミアム","YouTube Premium","Lemino"]],
+  ["音楽・本・マンガ",["Spotify","Apple Music","LINE MUSIC","Kindle Unlimited","Audible","マンガアプリの月額","雑誌・新聞の購読"]],
+  ["ネット・アプリ",["iCloud+","Google One","Microsoft 365","AIツールの有料プラン","Adobe","Nintendo Switch Online","PlayStation Plus","スマホゲームの月額パス","VPN・セキュリティソフト"]],
+  ["暮らし",["ジム・フィットネス","習い事・オンライン講座","食材・ミールキットの宅配","ウォーターサーバー","コンタクトレンズ定期便","サプリ・化粧品の定期便"]],
+  ["お金・保険",["生命保険・医療保険","自動車保険","奨学金の返済","ローン","リボ払い","クレジットカードの年会費","Amazonプライム以外の年会費"]],
+  ["予定の出費",["結婚式・ご祝儀","住民税","国民健康保険","国民年金","自動車税","車検","帰省・旅行","誕生日・記念日のプレゼント","賃貸の更新料"]],
+  ["その他",["ファンクラブ・推し活","クラウドファンディングの月額支援","寄付・サポート会員","ペット保険"]],
+];
+const LS_KEY="kyou-no-okane-v2";
+let state={settings:null,fixed:[],entries:[],wait:[],stopper:{},stats:{saved:0,overcome:0,xp:0,xpDay:{},seen:[]},pd:{}};
+const WAITS=[["24時間",24],["3日",72],["1週間",168]];let waitH=24;
+let cat="", editing=null, docRef=null, saveTimer=null;
+const $=id=>document.getElementById(id);
+const yen=n=>Math.round(n).toLocaleString("ja-JP");
+const num=v=>parseInt(String(v??"").replace(/[^0-9]/g,""),10)||0;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const dayKey=d=>`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+const startOfDay=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+const paydayIn=(y,m,day)=>new Date(y,m,Math.min(day,new Date(y,m+1,0).getDate()));
+function period(now,day){const t=startOfDay(now);let s=paydayIn(t.getFullYear(),t.getMonth(),day);if(s>t)s=paydayIn(t.getFullYear(),t.getMonth()-1,day);return {start:s,next:paydayIn(s.getFullYear(),s.getMonth()+1,day)};}
+const daysBetween=(a,b)=>Math.round((startOfDay(b)-startOfDay(a))/86400000);
+const monthly=f=>f.cycle==="o"?0:f.cycle==="y"?Math.ceil((f.amt||0)/12):(f.amt||0);
+const fixedTotal=()=>state.fixed.reduce((s,f)=>s+monthly(f),0);
+const parseDate=s=>{const m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s||"");return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const toISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+// total of fixed payments due between from and to (both inclusive, by day)
+// a dated one-off payment: whole amount if it falls in [from,to]; if it is later, set aside
+// the share of it that belongs to this window, so the full amount is ready by its date
+function oneOffShare(f,from,to){const d=parseDate(f.date),a=f.amt||0;if(!d||!a)return 0;from=startOfDay(from);to=startOfDay(to);
+  if(d<from)return 0;if(d<=to)return a;return Math.ceil(a*(daysBetween(from,to)+1)/daysBetween(from,d));}
+const saving=()=>{const t=startOfDay(new Date());return state.fixed.filter(f=>f.cycle==="o"&&f.amt&&parseDate(f.date)&&parseDate(f.date)>=t).sort((a,b)=>parseDate(a.date)-parseDate(b.date));};
+function dueBetween(from,to){from=startOfDay(from);to=startOfDay(to);if(to<from)return 0;let sum=0;const days=daysBetween(from,to)+1;
+  for(const f of state.fixed){const a=f.amt||0;if(!a)continue;
+    if(f.cycle==="o"){sum+=oneOffShare(f,from,to);}
+    else if(f.cycle==="m"&&f.day){for(let y=from.getFullYear(),m=from.getMonth();new Date(y,m,1)<=to;m++){const d=paydayIn(y,m,f.day);if(d>=from&&d<=to)sum+=a;}}
+    else sum+=Math.ceil(monthly(f)*days/30);}
+  return sum;}
+
+function migrate(s){
+  if(!s||typeof s!=="object") return null;
+  s.fixed=Array.isArray(s.fixed)?s.fixed:[];
+  s.entries=Array.isArray(s.entries)?s.entries:[];
+  if(s.settings&&s.settings.fixed&&!s.fixed.length){s.fixed.push({id:uid(),name:"固定費（まとめて）",amt:s.settings.fixed,cycle:"m",group:"その他"});}
+  if(s.settings){delete s.settings.fixed;s.settings.save=s.settings.save||0;}
+  s.wait=Array.isArray(s.wait)?s.wait:[];
+  s.stopper=s.stopper&&typeof s.stopper==="object"?s.stopper:{};
+  const st=s.stats&&typeof s.stats==="object"?s.stats:{};
+  s.stats={saved:st.saved||0,overcome:st.overcome||0,xp:st.xp||0,xpDay:st.xpDay||{},seen:Array.isArray(st.seen)?st.seen:[]};
+  s.pd=s.pd&&typeof s.pd==="object"?s.pd:{};
+  return s;
+}
+
+function compute(){
+  const s=state.settings; if(!s) return null;
+  const now=new Date(),today=startOfDay(now);
+  if(s.mode==="bal"){
+    const asOf=new Date(s.asOf),target=parseDate(s.target)||today;
+    const daysLeft=Math.max(1,daysBetween(today,target)+1);
+    const budget=s.balance-dueBetween(asOf,target);
+    let before=0,todaySpent=0;
+    for(const e of state.entries){if(e.ts<s.asOf)continue;const d=new Date(e.ts);
+      if(startOfDay(d).getTime()===today.getTime())todaySpent+=e.amt;else if(d<today)before+=e.amt;}
+    const daily=Math.floor((budget-before)/daysLeft);
+    return {mode:"bal",daily,left:daily-todaySpent,daysLeft,next:target,start:asOf,rem:budget-before-todaySpent,tomorrow:daysLeft>1?Math.floor((budget-before-todaySpent)/(daysLeft-1)):null};
+  }
+  const {start,next}=period(now,s.payday);
+  const budget=s.income-fixedTotal()-(s.save||0)-state.fixed.filter(f=>f.cycle==="o").reduce((t,f)=>t+oneOffShare(f,start,new Date(next.getFullYear(),next.getMonth(),next.getDate()-1)),0);
+  let before=0,todaySpent=0;
+  for(const e of state.entries){const d=new Date(e.ts);if(d<start||d>=next)continue;
+    if(startOfDay(d).getTime()===today.getTime())todaySpent+=e.amt;else if(d<today)before+=e.amt;}
+  const daysLeft=Math.max(1,daysBetween(today,next));
+  const daily=Math.floor((budget-before)/daysLeft);
+  return {daily,left:daily-todaySpent,daysLeft,next,start,rem:budget-before-todaySpent,tomorrow:daysLeft>1?Math.floor((budget-before-todaySpent)/(daysLeft-1)):null};
+}
+
+function renderToday(){
+  const c=compute(),amount=$("amount"),note=$("note");
+  amount.classList.remove("low","over");note.hidden=true;
+  const sv=saving(),svEl=$("saving");svEl.hidden=!sv.length||!c;
+  if(sv.length){svEl.textContent="取り分け中の予定："+sv.slice(0,3).map(f=>{const d=parseDate(f.date);return `${f.name}（${d.getMonth()+1}/${d.getDate()}）`;}).join("、")+(sv.length>3?` ほか${sv.length-3}件`:"");}
+  if(!c){amount.innerHTML='<span class="yen">¥</span>—';$("sub").textContent="はじめに手取りと給料日を入れてください";$("meter").style.width="0";}
+  else{
+    amount.innerHTML=`<span class="yen">¥</span>${yen(Math.max(0,c.left))}`;
+    $("sub").textContent=c.mode==="bal"?`${c.next.getMonth()+1}/${c.next.getDate()}まで持たせる（今日を入れてあと${c.daysLeft}日）`:`次の給料日（${c.next.getMonth()+1}/${c.next.getDate()}）まであと${c.daysLeft}日`;
+    const r=c.daily>0?Math.max(0,Math.min(1,c.left/c.daily)):0;$("meter").style.width=(r*100)+"%";
+    const unset=state.fixed.filter(f=>!f.amt).length;
+    if(c.daily<=0){amount.classList.add("over");note.hidden=false;note.textContent="給料日までのお金が足りない計算です。「固定費・サブスク」で解約できそうなものがないか見てみましょう。";}
+    else if(c.left<0){amount.classList.add("over");note.hidden=false;note.textContent=`今日は¥${yen(-c.left)}オーバー。大丈夫、明日からは1日¥${yen(Math.max(0,c.tomorrow??0))}で調整されます。`;}
+    else{if(r<0.25)amount.classList.add("low");
+      if(!state.fixed.length){note.hidden=false;note.textContent="固定費がまだ0円です。「固定費・サブスク」で家賃やサブスクを入れると、この数字が正確になります。";}
+      else if(unset){note.hidden=false;note.textContent=`金額が未入力の固定費が${unset}件あります。入れると数字がより正確になります。`;}}
+  }
+  const log=$("log");log.innerHTML="";const tk=dayKey(new Date());
+  const items=state.entries.filter(e=>dayKey(new Date(e.ts))===tk).sort((a,b)=>b.ts-a.ts);
+  if(!items.length){const p=document.createElement("p");p.className="empty";p.textContent="まだ記録はありません。使ったらすぐ金額だけ入れればOKです。";log.appendChild(p);return;}
+  for(const e of items){const li=document.createElement("li"),d=new Date(e.ts);
+    const w=document.createElement("span");w.className="what";w.textContent=e.cat||"記録";
+    const sm=document.createElement("small");sm.textContent=`${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;w.appendChild(sm);
+    const a=document.createElement("span");a.className="amt";a.textContent=`¥${yen(e.amt)}`;
+    const del=document.createElement("button");del.className="ghost";del.textContent="取り消す";
+    del.onclick=()=>{state.entries=state.entries.filter(x=>x.id!==e.id);persist();render();};
+    li.append(w,a,del);log.appendChild(li);}
+}
+
+function renderFixed(){
+  const tot=fixedTotal();
+  $("fxTotal").textContent=`¥${yen(tot)}`;
+  const once=state.fixed.filter(f=>f.cycle==="o"&&f.amt).reduce((t,f)=>t+f.amt,0);
+  $("fxYear").textContent=`1年で ¥${yen(tot*12)}`+(once?`／今回だけの支払い ¥${yen(once)}`:"");
+  const cut=state.fixed.filter(f=>f.cancel),cutSum=cut.reduce((s,f)=>s+monthly(f),0);
+  $("cutBox").hidden=!cut.length;
+  if(cut.length)$("cutBox").textContent=`解約を考えている${cut.length}件をやめると、毎月¥${yen(cutSum)}（1年で¥${yen(cutSum*12)}）浮きます。`;
+  const unset=state.fixed.filter(f=>!f.amt).length;
+  $("fxUnset").hidden=!unset;$("fxUnset").textContent=`金額が未入力：${unset}件（タップして入れられます）`;
+
+  const list=$("fxList");list.innerHTML="";
+  if(!state.fixed.length){const p=document.createElement("p");p.className="empty";p.textContent="まだありません。下のリストから当てはまるものをタップしてください。";list.appendChild(p);}
+  const order=SUGG.map(g=>g[0]);
+  const groups=[...new Set(state.fixed.map(f=>f.group||"その他"))].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  for(const g of groups){
+    const h=document.createElement("div");h.className="group-name";h.textContent=g;list.appendChild(h);
+    for(const f of state.fixed.filter(x=>(x.group||"その他")===g)){
+      const row=document.createElement("button");row.className="fx"+(f.cancel?" cancel":"");
+      row.style.cssText="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line)";
+      const n=document.createElement("span");n.className="name";n.textContent=f.name;
+      const meta=[];if(f.cycle==="o"){const d=parseDate(f.date),t=startOfDay(new Date());
+        if(!d)meta.push("予定の出費");else if(d<t)meta.push(`${d.getMonth()+1}/${d.getDate()}に支払い済み`);
+        else{const n=daysBetween(t,d);meta.push(n===0?"今日が支払日":`${d.getMonth()+1}/${d.getDate()}まで、1日約¥${yen(Math.ceil((f.amt||0)/n))}ずつ取り分け中`);}}if(f.cycle==="y")meta.push("年払い・月あたり¥"+yen(monthly(f)));if(f.day)meta.push(`毎月${f.day}日`);if(f.cancel)meta.push("解約を検討中");
+      if(meta.length){const s=document.createElement("small");s.textContent=meta.join("／");n.appendChild(s);}
+      const v=document.createElement("span");
+      if(f.amt){v.className="val";v.textContent=`¥${yen(f.amt)}${f.cycle==="y"?"/年":f.cycle==="o"?"":""}`;}else{v.className="unset";v.textContent="金額を入れる";}
+      row.append(n,v);row.onclick=()=>openFx(f);list.appendChild(row);
+    }
+  }
+  const names=new Set(state.fixed.map(f=>f.name));
+  const sg=$("sugg");sg.innerHTML="";
+  for(const [g,items] of SUGG){
+    const h=document.createElement("div");h.className="group-name";h.textContent=g;sg.appendChild(h);
+    const wrap=document.createElement("div");wrap.className="chips sugg";wrap.style.marginTop="4px";
+    for(const it of items){const b=document.createElement("button");b.textContent=it;
+      if(names.has(it)){b.className="added";b.setAttribute("aria-label",it+"（登録済み）");b.onclick=()=>openFx(state.fixed.find(f=>f.name===it));}
+      else b.onclick=()=>openFx({id:null,name:it,amt:0,cycle:g==="予定の出費"?"o":/年会費|火災保険/.test(it)?"y":"m",group:g});
+      wrap.appendChild(b);}
+    sg.appendChild(wrap);
+  }
+}
+function renderPayday(){
+  const box=$("paydayBox"),s=state.settings;box.hidden=true;if(!s||s.mode==="bal")return;
+  const days=state.stopper.days||3;const c=compute();
+  const since=daysBetween(c.start,new Date());
+  if(since<0||since>=days)return;
+  box.hidden=false;
+  $("paydayTitle").textContent=`給料日モード（あと${days-since}日）`;
+  const key=dayKey(c.start);const done=state.pd[key]||{};
+  box.querySelectorAll("[data-pd]").forEach(i=>{i.checked=!!done[i.dataset.pd];
+    i.onchange=()=>{const cur=state.pd[key]||{};const k=i.dataset.pd;
+      const first=i.checked&&!cur[k+"_x"];state.pd={[key]:{...cur,[k]:i.checked,...(first?{[k+"_x"]:1}:{})}};
+      if(first)gain(10,"先取りできた");checkBadges();persist();renderGrow();};});
+}
+function fmtLeft(ms){const h=Math.ceil(ms/36e5);return h>=24?`あと${Math.ceil(h/24)}日`:`あと${h}時間`;}
+function renderWait(){
+  $("stSaved").textContent=`¥${yen(state.stats.saved)}`;$("stCount").textContent=`${state.stats.overcome}回`;
+  const wl=$("wList"),wd=$("wDone");wl.innerHTML="";wd.innerHTML="";
+  const now=Date.now();
+  const waiting=state.wait.filter(w=>w.status==="waiting").sort((a,b)=>a.until-b.until);
+  if(!waiting.length){const p=document.createElement("p");p.className="empty";p.textContent="待機中のものはありません。欲しくなったら、まずここに入れてみましょう。";wl.appendChild(p);}
+  for(const w of waiting){
+    const d=document.createElement("div");const due=now>=w.until;d.className="witem"+(due?" due":"");
+    const top=document.createElement("div");top.className="top";
+    const n=document.createElement("span");n.textContent=w.name;const a=document.createElement("span");a.textContent=w.amt?`¥${yen(w.amt)}`:"";
+    top.append(n,a);d.appendChild(top);
+    const when=document.createElement("div");when.className="when";when.textContent=due?"待機おわり。まだ欲しい？":fmtLeft(w.until-now)+"で考え直せます";d.appendChild(when);
+    const ask=document.createElement("div");ask.className="ask";
+    if(due){
+      const b1=document.createElement("button");b1.className="keep";b1.textContent="やめておく";
+      b1.onclick=()=>{w.status="skipped";state.stats.saved+=w.amt||0;gain(30,"がまんできた");checkBadges();persist();render();};
+      const b2=document.createElement("button");b2.textContent="買う";
+      b2.onclick=()=>{w.status="bought";if(w.amt)state.entries.push({id:uid(),amt:w.amt,cat:"待機リストから",ts:Date.now()});persist();render();};
+      const b3=document.createElement("button");b3.textContent="もう少し待つ";
+      b3.onclick=()=>{w.until=Date.now()+24*36e5;persist();render();};
+      ask.append(b1,b2,b3);
+    }else{
+      const b1=document.createElement("button");b1.textContent="もう欲しくない";
+      b1.onclick=()=>{w.status="skipped";state.stats.saved+=w.amt||0;gain(30,"がまんできた");checkBadges();persist();render();};
+      ask.append(b1);
+    }
+    const del=document.createElement("button");del.className="ghost";del.textContent="削除";del.style.flex="0 0 auto";
+    del.setAttribute("aria-label",w.name+"を削除");
+    del.onclick=()=>{state.wait=state.wait.filter(x=>x.id!==w.id);persist();render();};
+    ask.appendChild(del);
+    d.appendChild(ask);wl.appendChild(d);
+  }
+  const done=state.wait.filter(w=>w.status!=="waiting").sort((a,b)=>b.ts-a.ts).slice(0,10);
+  $("wDoneH").hidden=!done.length;
+  for(const w of done){const d=document.createElement("div");d.className="fx done";
+    const n=document.createElement("span");n.className="name";n.textContent=w.name;
+    const v=document.createElement("span");v.className="val";v.textContent=(w.status==="skipped"?"やめた":"買った")+(w.amt?` ¥${yen(w.amt)}`:"");
+    const del=document.createElement("button");del.className="ghost";del.textContent="削除";
+    del.setAttribute("aria-label",w.name+"の結果を削除");
+    del.onclick=()=>{state.wait=state.wait.filter(x=>x.id!==w.id);persist();render();};
+    d.append(n,v,del);wd.appendChild(d);}
+}
+// ---- game ----
+const xpFor=n=>25*n*(n-1);
+function levelOf(xp){let n=1;while(xp>=xpFor(n+1))n++;return n;}
+const STAGES=["たね","芽が出た","ふたば","若葉","つぼみ","花がさいた","実がなった","大きな木"];
+function plantSVG(lv,small){
+  const st=Math.min(lv,8),gh=[0,18,34,52,70,84,92,100][st-1];
+  let g=`<svg viewBox="0 0 200 200" role="img" aria-label="${STAGES[st-1]}">`;
+  g+=`<ellipse cx="100" cy="182" rx="60" ry="7" fill="var(--soft)"/>`;
+  g+=`<path d="M62 140h76l-9 42H71z" fill="var(--warn)"/><rect x="56" y="132" width="88" height="12" rx="4" fill="var(--warn)"/>`;
+  g+=`<ellipse cx="100" cy="134" rx="40" ry="5" fill="var(--ink)" opacity=".25"/>`;
+  if(st===1){g+=`<ellipse cx="100" cy="128" rx="7" ry="5" fill="var(--ink)" opacity=".6"/>`;}
+  else{
+    const top=132-gh*1.0;
+    g+=`<path d="M100 132 C100 ${top+30} 98 ${top+15} 100 ${top}" stroke="var(--accent)" stroke-width="${st>=8?9:4}" fill="none" stroke-linecap="round"/>`;
+    const leaves=Math.min(st-1,6);
+    for(let i=0;i<leaves;i++){const y=128-(i+1)*(gh/(leaves+1)),side=i%2?1:-1,s=st>=8?1.5:1;
+      g+=`<ellipse cx="${100+side*14*s}" cy="${y}" rx="${14*s}" ry="${6*s}" transform="rotate(${side*-25} ${100+side*14*s} ${y})" fill="var(--accent)"/>`;}
+    if(st>=8){g+=`<circle cx="100" cy="${top}" r="38" fill="var(--accent)" opacity=".85"/><circle cx="78" cy="${top+12}" r="24" fill="var(--accent)"/><circle cx="122" cy="${top+12}" r="24" fill="var(--accent)"/>`;
+      [[86,top-8],[114,top+4],[98,top+22],[72,top+18],[126,top-14]].forEach(([x,y])=>g+=`<circle cx="${x}" cy="${y}" r="6" fill="var(--over)"/>`);}
+    else if(st===5){g+=`<ellipse cx="100" cy="${top-4}" rx="7" ry="10" fill="var(--over)" opacity=".7"/>`;}
+    else if(st>=6){for(let k=0;k<6;k++){const a=k*Math.PI/3;g+=`<circle cx="${100+Math.cos(a)*11}" cy="${top-6+Math.sin(a)*11}" r="8" fill="var(--over)" opacity=".85"/>`;}
+      g+=`<circle cx="100" cy="${top-6}" r="6" fill="var(--warn)"/>`;
+      if(st===7){g+=`<circle cx="82" cy="${top+26}" r="7" fill="var(--over)"/><circle cx="118" cy="${top+40}" r="7" fill="var(--over)"/>`;}}
+  }
+  return g+`</svg>`;
+}
+const GOALS=[["コンビニスイーツ",300],["ラーメン1杯",1000],["映画1本",2000],["ちょっといい焼肉",5000],["新しいスニーカー",12000],["1泊の温泉旅行",30000],["最新のゲーム機",50000],["1か月分の家賃くらい",80000]];
+const BADGES=[
+  ["✏️","はじめての記録",s=>s.entries.length>=1],
+  ["📅","7日分記録した",s=>new Set(s.entries.map(e=>dayKey(new Date(e.ts)))).size>=7],
+  ["🗓️","30日分記録した",s=>new Set(s.entries.map(e=>dayKey(new Date(e.ts)))).size>=30],
+  ["🛑","衝動を乗り越えた",s=>s.stats.overcome>=1],
+  ["🧘","5回乗り越えた",s=>s.stats.overcome>=5],
+  ["🏔️","20回乗り越えた",s=>s.stats.overcome>=20],
+  ["⏳","待機リストでやめた",s=>s.wait.some(w=>w.status==="skipped")],
+  ["💴","1万円浮いた",s=>s.stats.saved>=10000],
+  ["💰","3万円浮いた",s=>s.stats.saved>=30000],
+  ["👑","10万円浮いた",s=>s.stats.saved>=100000],
+  ["🔍","固定費を5件見つけた",s=>s.fixed.length>=5],
+  ["✂️","解約候補を見つけた",s=>s.fixed.some(f=>f.cancel)],
+  ["🏦","給料日の先取り完了",s=>Object.values(s.pd).some(v=>v&&v.fixed&&v.save&&v.check)],
+  ["🌸","花をさかせた",s=>levelOf(s.stats.xp)>=6],
+];
+let toastT=null;
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600);}
+function gain(n,why){if(!n)return;const before=levelOf(state.stats.xp);state.stats.xp+=n;const after=levelOf(state.stats.xp);
+  if(after>before)setTimeout(()=>toast(`レベルアップ！ Lv.${after}「${STAGES[Math.min(after,8)-1]}」`),900);
+  toast(`+${n} XP ${why}`);}
+function checkBadges(){const seen=new Set(state.stats.seen);let fresh=null;
+  for(const [ic,name,fn] of BADGES){if(fn(state)&&!seen.has(name)){seen.add(name);fresh=fresh||`${ic} バッジ獲得「${name}」`;}}
+  if(fresh){state.stats.seen=[...seen];setTimeout(()=>toast(fresh),1800);}}
+function renderGrow(){
+  const xp=state.stats.xp,lv=levelOf(xp),cur=xpFor(lv),nxt=xpFor(lv+1);
+  $("lvPill").innerHTML=plantSVG(lv,true)+`Lv.${lv}　${STAGES[Math.min(lv,8)-1]}`;
+  $("plant").innerHTML=plantSVG(lv);
+  $("gLv").textContent=`Lv.${lv}　${STAGES[Math.min(lv,8)-1]}`;
+  $("gXp").style.width=((xp-cur)/(nxt-cur)*100)+"%";
+  $("gNext").textContent=`次のレベルまで あと${nxt-xp} XP（合計 ${xp} XP）`;
+  const saved=state.stats.saved,box=$("goals");box.innerHTML="";
+  const reached=GOALS.filter(g=>saved>=g[1]),next=GOALS.find(g=>saved<g[1]);
+  const show=[...reached.slice(-2),...(next?[next]:[])];
+  if(!saved){const p=document.createElement("p");p.className="empty";p.textContent="衝動を乗り越えたり、待機リストでやめたりすると、ここに貯まっていきます。";box.appendChild(p);}
+  for(const [name,price] of show){const d=document.createElement("div");d.className="goal";
+    const r=Math.min(1,saved/price);
+    d.innerHTML=`<div class="gl"><span></span><span></span></div><div class="xpbar"><span style="width:${r*100}%"></span></div><div class="when"></div>`;
+    d.querySelector(".gl span").textContent=name;d.querySelectorAll(".gl span")[1].textContent=`¥${yen(price)}`;
+    d.querySelector(".when").textContent=r>=1?(saved>=price*2?`${Math.floor(saved/price)}回ぶん浮いています`:"達成！"):`あと¥${yen(price-saved)}`;
+    box.appendChild(d);}
+  const bx=$("badges");bx.innerHTML="";let got=0;
+  for(const [ic,name,fn] of BADGES){const ok=fn(state);if(ok)got++;const d=document.createElement("div");d.className="badge"+(ok?"":" lock");
+    const i=document.createElement("span");i.className="ic";i.textContent=ic;d.append(i,document.createTextNode(name));bx.appendChild(d);}
+  $("bCount").textContent=`${got}／${BADGES.length}`;
+}
+function render(){renderToday();renderPayday();renderWait();renderGrow();renderFixed();syncGo();}
+
+// today input
+const amtEl=$("amt"),go=$("go");
+function syncGo(){go.disabled=!(num(amtEl.value)>0&&state.settings);}
+amtEl.addEventListener("input",()=>{const n=num(amtEl.value);amtEl.value=n?n.toLocaleString("ja-JP"):"";syncGo();});
+document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{amtEl.value=(num(amtEl.value)+num(b.dataset.add)).toLocaleString("ja-JP");syncGo();});
+CATS.forEach(c=>{const b=document.createElement("button");b.textContent=c;b.setAttribute("aria-pressed","false");
+  b.onclick=()=>{cat=cat===c?"":c;$("cats").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.textContent===cat?"true":"false"));};$("cats").appendChild(b);});
+go.onclick=()=>{const n=num(amtEl.value);if(!n)return;
+  state.entries.push({id:uid(),amt:n,cat,ts:Date.now()});amtEl.value="";cat="";
+  const dk=dayKey(new Date());const cnt=state.stats.xpDay[dk]||0;state.stats.xpDay={[dk]:cnt+1};if(cnt<3)gain(5,"記録した");checkBadges();
+  $("cats").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));persist();render();};
+amtEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!go.disabled)go.click();});
+
+// tabs
+function showTab(t){const m={today:"Today",wait:"Wait",grow:"Grow",fixed:"Fixed"};
+  for(const k in m){$("view"+m[k]).hidden=k!==t;$("tab"+m[k]).setAttribute("aria-selected",k===t);}window.scrollTo(0,0);}
+$("tabToday").onclick=()=>showTab("today");$("tabWait").onclick=()=>showTab("wait");$("tabGrow").onclick=()=>showTab("grow");$("lvPill").onclick=()=>showTab("grow");$("tabFixed").onclick=()=>showTab("fixed");
+
+// wait list input
+WAITS.forEach(([l,hh])=>{const b=document.createElement("button");b.textContent=l;b.setAttribute("aria-pressed",hh===waitH?"true":"false");
+  b.onclick=()=>{waitH=hh;$("wWait").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));};$("wWait").appendChild(b);});
+$("wAmt").addEventListener("input",()=>{const n=num($("wAmt").value);$("wAmt").value=n?n.toLocaleString("ja-JP"):"";});
+function addWait(name,amt,hours){state.wait.push({id:uid(),name,amt,ts:Date.now(),until:Date.now()+hours*36e5,status:"waiting"});persist();render();}
+$("wAdd").onclick=()=>{const n=$("wName").value.trim();if(!n){$("wName").focus();return;}
+  addWait(n,num($("wAmt").value),waitH);$("wName").value="";$("wAmt").value="";};
+
+// stopper settings
+const dSS=$("dStopSet");
+function openStopSet(){const s=state.stopper;$("ssLabel").value=s.label||"";$("ssAmt").value=s.amt||"";$("ssMsg").value=s.msg||"";$("ssAlt").value=s.alt||"";$("ssDays").value=s.days||"";dSS.showModal();}
+$("openStopSet").onclick=openStopSet;$("ssClose").onclick=()=>dSS.close();
+$("ssSave").onclick=()=>{const d=num($("ssDays").value);
+  state.stopper={label:$("ssLabel").value.trim(),amt:num($("ssAmt").value),msg:$("ssMsg").value.trim(),alt:$("ssAlt").value.trim(),days:d>=1&&d<=14?d:3};
+  dSS.close();persist();render();};
+
+// stopper flow
+const dStop=$("dStop");let tInt=null;
+function stopStep(n){for(let i=1;i<=4;i++)$("stop"+i).hidden=i!==n;}
+function renderImpact(){
+  const amt=num($("stopAmt").value),c=compute(),box=$("impact");box.innerHTML="";
+  if(!c){box.textContent="手取りと給料日を入れると、使った後の数字が見られます。";return;}
+  const now=Math.floor(c.rem/c.daysLeft),after=Math.floor((c.rem-amt)/c.daysLeft);
+  const p=document.createElement("div");p.textContent=`給料日まで（あと${c.daysLeft}日）の1日あたり`;
+  const a=document.createElement("div");a.className="arrow"+(after<=0?" bad":"");a.textContent=`¥${yen(Math.max(0,now))} → ¥${yen(Math.max(0,after))}`;
+  box.append(p,a);
+  if(c.rem-amt<0){const w=document.createElement("div");w.style.marginTop="6px";w.textContent=`給料日までに¥${yen(amt-c.rem)}足りなくなります。`;box.appendChild(w);}
+}
+$("stopAmt").addEventListener("input",()=>{const n=num($("stopAmt").value);$("stopAmt").value=n?n.toLocaleString("ja-JP"):"";renderImpact();});
+$("urgeBtn").onclick=()=>{
+  const s=state.stopper;$("stopAmt").value=s.amt?s.amt.toLocaleString("ja-JP"):"";
+  $("stopMsg").hidden=!s.msg;$("stopMsg").textContent=s.msg?`「${s.msg}」`:"";
+  $("altLi").hidden=!s.alt;$("altLi").textContent=s.alt||"";
+  stopStep(1);renderImpact();dStop.showModal();};
+function finish(title,body){clearInterval(tInt);$("s4Title").textContent=title;$("s4Body").textContent=body;stopStep(4);}
+function overcome(){const amt=num($("stopAmt").value);state.stats.overcome++;state.stats.saved+=amt;gain(50,"衝動を乗り越えた");checkBadges();persist();render();
+  finish("よく乗り越えました",amt?`¥${yen(amt)}が手元に残りました。乗り越えた回数は${state.stats.overcome}回目です。`:`乗り越えた回数は${state.stats.overcome}回目です。`);}
+function toList(){const s=state.stopper;gain(20,"明日に回せた");addWait(s.label||"使いたかったこと",num($("stopAmt").value),24);checkBadges();
+  finish("明日の自分に任せました","待機リストに入れました。24時間後に「まだ使いたい？」と聞きます。");}
+$("stopCalm").onclick=overcome;$("stopCalm2").onclick=overcome;
+$("stopToList").onclick=toList;$("stopToList2").onclick=toList;
+$("stopStill").onclick=()=>{clearInterval(tInt);stopStep(3);};
+$("stopDecide").onclick=()=>finish("決めたなら、それでOK","使った後に金額を記録しておけば、明日からの1日あたりが自動で調整されます。");
+$("stopWait").onclick=()=>{stopStep(2);$("stopStill").hidden=true;let left=600;
+  const draw=()=>$("timer").textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;draw();
+  clearInterval(tInt);tInt=setInterval(()=>{left--;draw();if(left<=0){clearInterval(tInt);$("timer").textContent="10分たちました";$("stopStill").hidden=false;}},1000);};
+$("stopClose").onclick=()=>dStop.close();
+dStop.addEventListener("close",()=>clearInterval(tInt));
+
+// income dialog
+const dInc=$("dIncome");
+let incMode="pay";
+function setMode(m){incMode=m;$("sMode").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m?"true":"false"));$("modePay").hidden=m!=="pay";$("modeBal").hidden=m!=="bal";}
+$("sMode").querySelectorAll("button").forEach(b=>b.onclick=e=>{e.preventDefault();setMode(b.dataset.m);});
+function openIncome(){const s=state.settings||{};$("sIncome").value=s.income||"";$("sPayday").value=s.payday||"";$("sSave").value=s.save||"";
+  $("sBal").value=s.balance||"";$("sTarget").value=s.target||"";
+  setMode(s.mode==="bal"?"bal":"pay");dInc.showModal();}
+$("openIncome").onclick=openIncome;$("incCancel").onclick=()=>dInc.close();
+$("incSave").onclick=()=>{
+  if(incMode==="bal"){const bal=num($("sBal").value),t=$("sTarget").value;
+    if(!bal){$("sBal").focus();return;} if(!parseDate(t)||parseDate(t)<startOfDay(new Date())){$("sTarget").focus();return;}
+    const prev=state.settings||{};const same=prev.mode==="bal"&&prev.balance===bal;
+    state.settings={...prev,mode:"bal",balance:bal,target:t,asOf:same?prev.asOf:Date.now()};dInc.close();persist();render();return;}
+  const income=num($("sIncome").value),payday=num($("sPayday").value);
+  if(!income){$("sIncome").focus();return;} if(payday<1||payday>31){$("sPayday").focus();return;}
+  state.settings={...(state.settings||{}),mode:"pay",income,payday,save:num($("sSave").value)};dInc.close();persist();render();
+  if(!state.fixed.length)showTab("fixed");};
+
+// fixed dialog
+const dFx=$("dFx");let cycle="m";
+function setCycle(c){cycle=c;$("fCycle").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===c?"true":"false"));$("fDayL").hidden=c==="o";$("fDateL").hidden=c!=="o";}
+$("fCycle").querySelectorAll("button").forEach(b=>b.onclick=e=>{e.preventDefault();setCycle(b.dataset.c);});
+function openFx(f){editing=f;$("fxTitle").textContent=f.id?"固定費を編集":"固定費を追加";
+  $("fName").value=f.name;$("fAmt").value=f.amt||"";$("fDay").value=f.day||"";$("fCancel").checked=!!f.cancel;$("fDate").value=f.date||"";setCycle(f.cycle||"m");
+  $("fDel").hidden=!f.id;dFx.showModal();setTimeout(()=>$("fAmt").focus(),50);}
+$("fClose").onclick=()=>dFx.close();
+$("fSave").onclick=()=>{const name=$("fName").value.trim();if(!name){$("fName").focus();return;}
+  const day=num($("fDay").value);
+  if(cycle==="o"&&!parseDate($("fDate").value)){$("fDate").focus();return;}
+  const data={name,amt:num($("fAmt").value),cycle,day:day>=1&&day<=31?day:0,date:cycle==="o"?$("fDate").value:"",cancel:$("fCancel").checked,group:editing.group||"その他"};
+  if(editing.id){const f=state.fixed.find(x=>x.id===editing.id);if(data.cancel&&!f.cut_x){data.cut_x=1;gain(15,"解約候補を見つけた");}Object.assign(f,data);}
+  else{if(data.cancel){data.cut_x=1;gain(20,"固定費と解約候補を登録");}else gain(5,"固定費を登録");state.fixed.push({id:uid(),...data});}
+  checkBadges();
+  dFx.close();persist();render();};
+$("fDel").onclick=()=>{state.fixed=state.fixed.filter(x=>x.id!==editing.id);dFx.close();persist();render();};
+$("ownAdd").onclick=()=>{const n=$("ownName").value.trim();if(!n){$("ownName").focus();return;}$("ownName").value="";openFx({id:null,name:n,amt:0,cycle:"m",group:"その他"});};
+$("ownName").addEventListener("keydown",e=>{if(e.key==="Enter")$("ownAdd").click();});
+
+// reset
+const dRs=$("dReset");
+$("openReset").onclick=()=>dRs.showModal();$("rsCancel").onclick=()=>dRs.close();
+$("rsOk").onclick=()=>{state={settings:null,fixed:[],entries:[],wait:[],stopper:{},stats:{saved:0,overcome:0,xp:0,xpDay:{},seen:[]},pd:{}};
+  try{localStorage.removeItem("kyou-no-okane-v1");}catch(e){}
+  dRs.close();persist();render();showTab("today");setTimeout(openIncome,200);toast("すべて消しました");};
+
+// storage
+function persist(){
+  const cut=Date.now()-864e5*120;state.entries=state.entries.filter(e=>e.ts>=cut);
+  try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
+  if(docRef){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{
+    docRef.set({settings:state.settings,fixed:state.fixed,entries:state.entries,wait:state.wait,stopper:state.stopper,stats:state.stats,pd:state.pd,updatedAt:Date.now()})
+      .then(()=>$("sync").textContent="ほかの端末からも同じデータを見られます")
+      .catch(()=>$("sync").textContent="この端末にだけ保存しています");},400);}
+}
+try{const raw=localStorage.getItem(LS_KEY)||localStorage.getItem("kyou-no-okane-v1");if(raw){const s=migrate(JSON.parse(raw));if(s)state=s;}}catch(e){}
+render();
+// ---- tutorial ----
+const A='var(--accent)',W='var(--warn)',O='var(--over)',S='var(--soft)',I='var(--ink)';
+const TOUR=[
+  {t:"「今日あといくら使えるか」\nだけ見ればOK",b:"家計簿をきっちりつけなくても大丈夫。このアプリは、今日使っていいお金をひとつの数字で教えます。",
+   svg:`<circle cx="66" cy="66" r="58" fill="${S}"/><text x="66" y="84" text-anchor="middle" font-size="54" font-weight="900" fill="${A}">¥</text>`},
+  {t:"使ったら、金額だけ入れる",b:"カテゴリはあとでも、なくてもOK。記録すると、数字が自動で減っていきます。",
+   svg:`<rect x="26" y="16" width="70" height="96" rx="10" fill="${S}"/><rect x="38" y="36" width="46" height="7" rx="3" fill="${A}"/><rect x="38" y="54" width="34" height="7" rx="3" fill="${A}" opacity=".5"/><rect x="38" y="72" width="40" height="7" rx="3" fill="${A}" opacity=".5"/><path d="M84 104 L116 60 L124 66 L92 110 L82 114 Z" fill="${W}"/>`},
+  {t:"オーバーしても、\n明日から自動で調整",b:"使いすぎた日を責める機能はありません。次の日からの1日あたりを、そっと計算し直します。",
+   svg:`<ellipse cx="66" cy="120" rx="40" ry="6" fill="${S}"/><path d="M40 92h52l-6 26H46z" fill="${W}"/><path d="M66 92 C66 70 64 60 66 46" stroke="${A}" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="62" rx="16" ry="7" transform="rotate(25 50 62)" fill="${A}"/><ellipse cx="82" cy="52" rx="16" ry="7" transform="rotate(-25 82 52)" fill="${A}"/>`},
+  {t:"「今すぐ買いたい」ときは\nオレンジのボタン",b:"使ったらどうなるかを先に見せて、10分だけ時間をかせぎます。欲しいものは待機リストに入れて、あとで考えることもできます。",
+   svg:`<polygon points="44,12 88,12 120,44 120,88 88,120 44,120 12,88 12,44" fill="${W}"/><rect x="34" y="58" width="64" height="16" rx="8" fill="#fff"/>`},
+  {t:"最初に2つだけ教えてください",b:"毎月の手取りと給料日（収入が決まっていなければ、今の残高と持たせたい日）。家賃やサブスクは、あとで「固定費」タブから足せます。",
+   svg:`<circle cx="46" cy="66" r="26" fill="none" stroke="${A}" stroke-width="12"/><rect x="68" y="60" width="54" height="12" rx="6" fill="${A}"/><rect x="100" y="66" width="10" height="22" rx="4" fill="${A}"/><rect x="84" y="66" width="10" height="16" rx="4" fill="${A}"/>`},
+];
+const dTour=$("dTour");let tourI=0;
+function drawTour(){const s=TOUR[tourI];
+  $("tourSlide").innerHTML=`<svg viewBox="0 0 132 132" aria-hidden="true">${s.svg}</svg><h3></h3><p></p>`;
+  $("tourSlide").querySelector("h3").textContent=s.t;$("tourSlide").querySelector("p").textContent=s.b;
+  $("tourDots").innerHTML=TOUR.map((_,i)=>`<span class="${i===tourI?"on":""}"></span>`).join("");
+  $("tourBack").style.visibility=tourI?"visible":"hidden";
+  const last=tourI===TOUR.length-1;$("tourNext").textContent=last?(state.settings?"はじめる":"設定する"):"次へ";$("tourSkip").hidden=last;}
+function openTour(){tourI=0;drawTour();dTour.showModal();$("tourNext").focus();}
+function endTour(){try{localStorage.setItem("kyou-tour-done","1");}catch(e){}dTour.close();if(!state.settings)setTimeout(openIncome,150);}
+$("tourNext").onclick=()=>{if(tourI<TOUR.length-1){tourI++;drawTour();}else endTour();};
+$("tourBack").onclick=()=>{if(tourI>0){tourI--;drawTour();}};
+$("tourSkip").onclick=endTour;
+dTour.addEventListener("cancel",e=>{e.preventDefault();endTour();});
+let tx=null;dTour.addEventListener("touchstart",e=>{tx=e.touches[0].clientX;},{passive:true});
+dTour.addEventListener("touchend",e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;
+  if(dx<-50&&tourI<TOUR.length-1){tourI++;drawTour();}else if(dx>50&&tourI>0){tourI--;drawTour();}},{passive:true});
+$("openTour").onclick=openTour;
+let tourDone=false;try{tourDone=!!localStorage.getItem("kyou-tour-done");}catch(e){}
+if(!tourDone&&!state.settings)setTimeout(openTour,300);
+else if(!state.settings)setTimeout(openIncome,300);
+
+$("sync").textContent="データはこのスマホの中に保存されています";
+
+// data export / import
+const dDt=$("dData");
+$("openData").onclick=()=>{$("dtMsg").textContent="";$("dtText").value="";dDt.showModal();};
+$("dtClose").onclick=()=>dDt.close();
+const dump=()=>JSON.stringify({app:"kyou-no-okane",exportedAt:Date.now(),data:state});
+$("dtExport").onclick=async()=>{
+  const name=`kyou-no-okane-${toISO(new Date())}.json`,blob=new Blob([dump()],{type:"application/json"});
+  try{const file=new File([blob],name,{type:"application/json"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});$("dtMsg").textContent="書き出しました。";return;}}catch(e){if(e&&e.name==="AbortError")return;}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+  $("dtMsg").textContent="書き出しました。ダウンロードしたファイルを大切に保管してください。";};
+$("dtCopy").onclick=async()=>{try{await navigator.clipboard.writeText(dump());$("dtMsg").textContent="コピーしました。メモアプリなどに貼り付けて保管できます。";}
+  catch(e){$("dtText").value=dump();$("dtText").select();$("dtMsg").textContent="下の欄の文字をすべて選んでコピーしてください。";}};
+function importText(t){
+  try{let o=JSON.parse(t);if(o&&o.data&&typeof o.data==="object")o=o.data;
+    const s=migrate({...o});if(!s||!Array.isArray(s.entries))throw 0;
+    state={settings:s.settings||null,fixed:s.fixed,entries:s.entries,wait:s.wait,stopper:s.stopper,stats:s.stats,pd:s.pd};
+    persist();render();dDt.close();toast("データを読み込みました");}
+  catch(e){$("dtMsg").textContent="読み込めませんでした。このアプリで書き出したファイルか確認してください。";}}
+$("dtPick").onclick=()=>$("dtFile").click();
+$("dtFile").onchange=async()=>{const f=$("dtFile").files[0];if(f)importText(await f.text());$("dtFile").value="";};
+$("dtPaste").onclick=()=>{const t=$("dtText").value.trim();if(!t){$("dtText").focus();return;}importText(t);};
+
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)render();});
+setInterval(()=>{renderToday();renderPayday();renderWait();},60000);
+</script>
+</body>
+</html>
